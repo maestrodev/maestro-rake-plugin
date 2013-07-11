@@ -114,9 +114,6 @@ describe MaestroDev::RakeWorker do
 
       subject.perform(:execute, @workitem)
 
-      puts ">>>#{@workitem['fields']['command']}"
-      puts "<<<#{@workitem['__output__']}"
-
       @workitem['fields']['__error__'].should be_nil
       @workitem['__output__'].should include("rake, version")
       @workitem['__output__'].should_not include("ERROR")
@@ -145,9 +142,6 @@ describe MaestroDev::RakeWorker do
 
       subject.perform(:execute, @workitem)
 
-      puts ">>>#{@workitem['fields']['command']}"
-      puts "<<<#{@workitem['__output__']}"
-
       @workitem['fields']['__error__'].should be_nil
       @workitem['__output__'].should include("rake, version")
       @workitem['__output__'].should_not include("ERROR")
@@ -162,9 +156,6 @@ describe MaestroDev::RakeWorker do
       @workitem['fields']['use_bundle'] = false
 
       subject.perform(:execute, @workitem)
-
-      puts ">>>#{@workitem['fields']['command']}"
-      puts "<<<#{@workitem['__output__']}"
 
       @workitem['fields']['__error__'].should be_nil
       @workitem['__output__'].should include("rake, version")

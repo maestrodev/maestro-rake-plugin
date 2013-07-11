@@ -1,7 +1,7 @@
 # Copyright (c) 2013 MaestroDev.  All rights reserved.
 require 'maestro_plugin'
 
-require 'shell'
+require 'maestro_shell'
 require 'ruby_helper'
 
 module MaestroDev
