@@ -55,7 +55,7 @@ module MaestroDev
           res = value
         elsif value.is_a?(Fixnum)
           res = value != 0
-        elsf value.respond_to?(:to_s)
+        elsif value.respond_to?(:to_s)
           value = value.to_s.downcase
             
           res = (value == 't' || value == 'true')
@@ -145,7 +145,11 @@ module MaestroDev
         if @environment.include?("BUNDLE_WITHOUT=")
           bundle_without = ""
         else
-          bundle_without = "&& #{Maestro::Util::Shell::ENV_EXPORT_COMMAND} BUNDLE_WITHOUT='' "
+          # ENV Var is just one way to get bundle to do without... if you 'bundle config without....' it is stickier and is in
+          # the .bundle dir.
+          # rake seems to use this more official way of setting... and even though it does clear the .bundle dir on a clean
+          # that doesn't help if rake isn't installed!
+          bundle_without = "&& #{@bundle_executable} config --delete without && #{Maestro::Util::Shell::ENV_EXPORT_COMMAND} BUNDLE_WITHOUT='' "
         end
         bundle = "#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} BUNDLE_GEMFILE=#{@path}/Gemfile #{bundle_without}&& #{@bundle_executable} install && #{@bundle_executable} exec"
       end
