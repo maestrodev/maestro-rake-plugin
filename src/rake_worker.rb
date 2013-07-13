@@ -34,7 +34,7 @@ module MaestroDev
         Maestro.log.warn("Error executing Rake Task: #{e.class} #{e}: " + e.backtrace.join("\n"))
       end
 
-      write_output "\n\nRAKE task complete"
+      write_output "\n\nRAKE task complete\n"
       set_error(@error) if @error
     end
 
@@ -92,6 +92,8 @@ module MaestroDev
       errors << 'bundle not installed' if @use_bundle && !valid_executable?(@bundle_executable)
 
       @environment = get_field('environment', '')
+      @env = @environment.empty? ? "" : "#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} #{@environment.gsub(/(&&|[;&])\s*$/, '')} && "
+
       @tasks = get_field('tasks', '')
       @gems = get_field('gems', '')
 
@@ -161,11 +163,10 @@ module MaestroDev
           gems_script += "gem install #{gem_name} --no-ri --no-rdoc && "
         end
       end
-            
+
       shell_command = <<-Rake
 #{Maestro::Util::Shell::ENV_EXPORT_COMMAND} RUBYOPT=
-#{@environment.empty? ? "": "#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} #{@environment}" } 
-#{@use_rvm ? "#{script_prefix} rvm use #{@ruby_version} && " : ''} cd #{@path} && #{@gems ? gems_script : ''} #{@use_bundle ? bundle : ''} #{@rake_executable} --trace #{@tasks}
+#{@env}#{@use_rvm ? "#{script_prefix} rvm use #{@ruby_version} && " : ''} cd #{@path} && #{@gems ? gems_script : ''} #{@use_bundle ? bundle : ''} #{@rake_executable} --trace #{@tasks}
 Rake
 
       set_field('command', shell_command)
