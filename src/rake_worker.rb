@@ -47,7 +47,7 @@ module MaestroDev
     end
 
     def on_output(text, is_stderr)
-      @log_mutex.synchronize.do
+      @log_mutex.synchronize do
         write_output(text, :buffer => true)
       end
     end
