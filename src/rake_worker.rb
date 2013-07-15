@@ -12,6 +12,10 @@ module MaestroDev
   class RakeWorker < Maestro::MaestroWorker
     include Maestro::Plugin::RubyHelper
 
+    def initialize
+      @log_mutex = Mutex.new
+    end
+
     def execute
       write_output("\nRAKE task starting", :buffer => true)
 
@@ -43,7 +47,9 @@ module MaestroDev
     end
 
     def on_output(text, is_stderr)
-      write_output(text, :buffer => true)
+      @log_mutex.synchronize.do
+        write_output(text, :buffer => true)
+      end
     end
 
     ###########
