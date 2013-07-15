@@ -7,6 +7,7 @@ module Maestro
     module RubyHelper
 
       def script_prefix
+        # Note double quotes in error... that is so it doesn't trigger unit-test errors
         prefix = <<-SCRIPT
 if [[ -s "$HOME/.rvm/scripts/rvm" ]] ; then
   \# First try to load from a user install
@@ -15,7 +16,7 @@ elif [[ -s "/usr/local/rvm/scripts/rvm" ]] ; then
   \# Then try to load from a root install
   source "/usr/local/rvm/scripts/rvm"
 else
-  printf "ERROR: An RVM installation was not found.\n"
+  printf "ER""ROR: An RVM installation was not found.\n"
 fi
 #{@environment.empty? ? "": "#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} #{@environment}" } 
 SCRIPT

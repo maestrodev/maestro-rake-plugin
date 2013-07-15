@@ -53,7 +53,6 @@ describe MaestroDev::RakeWorker do
       workitem['fields']['__error__'].should include("rvm not installed")
       workitem['fields']['__error__'].should include("bundle not installed")
       workitem['fields']['__error__'].should include("missing ruby_version")
-      workitem['fields']['__error__'].should include("missing rubygems_version")
     end
   
     it "should validate rvm fields" do
