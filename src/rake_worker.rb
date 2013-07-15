@@ -13,7 +13,7 @@ module MaestroDev
     include Maestro::Plugin::RubyHelper
 
     def execute
-      write_output("\nRAKE task starting\n", :buffer => true)
+      write_output("\nRAKE task starting", :buffer => true)
 
       begin
         validate_parameters
@@ -21,8 +21,10 @@ module MaestroDev
         Maestro.log.info "Inputs: tasks = #{@tasks}"
 
         shell = Maestro::Util::Shell.new
-        shell.create_script(create_command)
+        command = create_command
+        shell.create_script(command)
 
+        write_output("\nRunning command:\n----------\n#{command}\n----------\n")
         exit_code = shell.run_script_with_delegate(self, :on_output)
 
         @error = shell.output unless exit_code.success?
@@ -75,24 +77,24 @@ module MaestroDev
       @rubygems_version = ''
 
       @rake_executable = get_field('rake_executable', 'rake')
-      errors << 'rake not installed' unless valid_executable?(@rake_executable)
 
       @use_rvm = booleanify(get_field('use_rvm', false))
       @rvm_executable = get_field('rvm_executable', 'rvm')
-      errors << 'rvm not installed' if @use_rvm && !valid_executable?(@rvm_executable)
 
       @ruby_version = get_field('ruby_version', '')
-      errors << 'missing ruby_version' if @use_rvm && @ruby_version.empty?
 
       @rubygems_version = get_field('rubygems_version', '')
-      errors << 'missing rubygems_version' if @use_rvm && @rubygems_version.empty?
 
       @use_bundle = booleanify(get_field('use_bundle', false))
       @bundle_executable = get_field('bundle_executable', 'bundle')
-      errors << 'bundle not installed' if @use_bundle && !valid_executable?(@bundle_executable)
 
       @environment = get_field('environment', '')
       @env = @environment.empty? ? "" : "#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} #{@environment.gsub(/(&&|[;&])\s*$/, '')} && "
+
+      errors << 'rvm not installed' if @use_rvm && !valid_executable?(@rvm_executable)
+      errors << 'missing ruby_version' if @use_rvm && @ruby_version.empty?
+      errors << 'bundle not installed' if @use_bundle && !valid_executable?(@bundle_executable)
+      errors << 'rake not installed' unless valid_executable?(@rake_executable)
 
       @tasks = get_field('tasks', '')
       @gems = get_field('gems', '')
@@ -105,7 +107,7 @@ module MaestroDev
 
       if @use_rvm
         errors << "Requested Ruby version #{@ruby_version} not available" unless @installed_ruby_version && @ruby_version == @installed_ruby_version
-        errors << "Requested RubyGems version #{@rubygems_version} not available" unless @installed_rubygems_version && @rubygems_version == @installed_rubygems_version
+        errors << "Requested RubyGems version #{@rubygems_version} not available" unless @rubygems_version.empty? || (@installed_rubygems_version && @rubygems_version == @installed_rubygems_version)
       end
 
       process_tasks_field
