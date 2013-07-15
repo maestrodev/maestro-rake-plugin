@@ -26,8 +26,10 @@ module MaestroDev
 
         write_output("\nRunning command:\n----------\n#{command}\n----------\n")
         exit_code = shell.run_script_with_delegate(self, :on_output)
+        output = shell.output
+        extract_test_results(output)
 
-        @error = shell.output unless exit_code.success?
+        @error = output unless exit_code.success?
       rescue ConfigError => e
         @error = e.message
       rescue Exception => e
@@ -177,5 +179,32 @@ Rake
       shell_command
     end
 
+    def extract_test_results(output)      
+      # Post-process output to try to gather some semi-useful info (like, how many tests were run, etc)
+      # I figure this is going to be pretty version-specific
+      tests = output.scan(/\n\*\* Execute (spec(?:\:\w*)?)(.*)Finished in (\d*(?:\.\d+)?) seconds\n*(\d+) examples, (\d+) failures\n/m)
+      
+      if tests and !tests.empty?
+        Maestro.log.info "Found #{tests.length} test blocks"
+        test_meta = []
+
+        tests.each do |test|
+          # [0] = test name
+          # [1] = test output  -- we can run further regexes to extract failing tests if we want
+          # [2] = duration
+          # [3] = # tests
+          # [4] = # failures
+          test_count = test[3].to_i
+          fail_count = test[4].to_i
+          pass_count = test_count - fail_count
+          test_meta << { :spec => test[0], :duration => test[2], :tests => test[3], :passed => pass_count, :failures => test[4] }
+          write_output("\nFound test results: spec: #{test[0]}, duration: #{test[2]}, tests: #{test[3]}, passed: #{pass_count}, failures: #{test[4]}", :buffer => true)
+        end
+        
+        save_output_value('tests', test_meta)
+      else
+        write_output("\nNo test results found", :buffer => true)
+      end
+    end
   end
 end
