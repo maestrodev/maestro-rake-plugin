@@ -7,6 +7,8 @@ module Maestro
     module RubyHelper
 
       def script_prefix
+        return '' unless @use_rvm
+
         # Note double quotes in error... that is so it doesn't trigger unit-test errors
         prefix = <<-SCRIPT
 if [[ -s "$HOME/.rvm/scripts/rvm" ]] ; then

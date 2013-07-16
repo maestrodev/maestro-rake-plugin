@@ -34,7 +34,6 @@ module MaestroDev
         @error = e.message
       rescue Exception => e
         @error = "Error executing Rake Task: #{e.class} #{e}"
-        puts e.backtrace.join("\n")
         Maestro.log.warn("Error executing Rake Task: #{e.class} #{e}: " + e.backtrace.join("\n"))
       end
 
@@ -42,7 +41,7 @@ module MaestroDev
       set_error(@error) if @error
     end
 
-    def on_output(text, is_stderr)
+    def on_output(text)
       write_output(text, :buffer => true)
     end
 
@@ -95,8 +94,9 @@ module MaestroDev
 
       errors << 'rvm not installed' if @use_rvm && !valid_executable?(@rvm_executable)
       errors << 'missing ruby_version' if @use_rvm && @ruby_version.empty?
-      errors << 'bundle not installed' if @use_bundle && !valid_executable?(@bundle_executable)
-      errors << 'rake not installed' unless valid_executable?(@rake_executable)
+      # this check wasn't done previousy
+      errors << 'bundle not installed' if @use_bundle && !valid_executable?("#{rvm_prefix} #{@bundle_executable}")
+      errors << 'rake not installed' unless valid_executable?("#{rvm_prefix} #{@rake_executable}")
 
       @tasks = get_field('tasks', '')
       @gems = get_field('gems', '')
@@ -144,6 +144,10 @@ module MaestroDev
       end
     end
 
+    def rvm_prefix
+      "#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} RUBYOPT=\n#{@env}#{@use_rvm ? "#{script_prefix} rvm use #{@ruby_version} && " : ''}"
+    end
+
     def create_command
       # TODO consider something in standard ruby such as system({"MYVAR" => "42"}, "echo $MYVAR")
       if @use_bundle
@@ -169,8 +173,7 @@ module MaestroDev
       end
 
       shell_command = <<-Rake
-#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} RUBYOPT=
-#{@env}#{@use_rvm ? "#{script_prefix} rvm use #{@ruby_version} && " : ''} cd #{@path} && #{@gems ? gems_script : ''} #{@use_bundle ? bundle : ''} #{@rake_executable} --trace #{@tasks}
+#{rvm_prefix} cd #{@path} && #{@gems ? gems_script : ''} #{@use_bundle ? bundle : ''} #{@rake_executable} --trace #{@tasks}
 Rake
 
       set_field('command', shell_command)
