@@ -24,7 +24,7 @@ module MaestroDev
         command = create_command
         shell.create_script(command)
 
-        write_output("\nRunning command:\n----------\n#{command}\n----------\n")
+        write_output("\nRunning command:\n----------\n#{command.chomp}\n----------\n")
         exit_code = shell.run_script_with_delegate(self, :on_output)
         output = shell.output
         extract_test_results(output)
