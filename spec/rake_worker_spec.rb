@@ -72,14 +72,14 @@ describe MaestroDev::RakeWorker do
   
     it "should validate with only scm path" do
       workitem = {'fields' => {
+         'rake_executable' => 'echo 1',
          'scm_path' => '/tmp'
       }}
 
       subject.perform(:execute, workitem)
 
-      # Error 'Rake aborted' indicates it started the task, meaning
-      # validation succeeded
-      workitem['fields']['__error__'].should include('rake aborted!')
+      workitem['__output__'].should include('1')
+      workitem['fields']['__error__'].should be_nil
     end
   end
 
@@ -153,6 +153,7 @@ describe MaestroDev::RakeWorker do
       @workitem['fields']['use_rvm'] = false
       @workitem['fields']['environment'] = 'CC=/usr/bin/gcc-4.2'
       @workitem['fields']['use_bundle'] = false
+      @workitem['fields']['rake_executable'] = 'echo "fake rake, version"'
 
       subject.perform(:execute, @workitem)
 
