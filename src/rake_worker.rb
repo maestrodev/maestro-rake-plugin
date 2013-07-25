@@ -5,208 +5,209 @@ require 'maestro_shell'
 require 'ruby_helper'
 
 module MaestroDev
-
-  class ConfigError < StandardError
-  end
-
-  class RakeWorker < Maestro::MaestroWorker
-    include Maestro::Plugin::RubyHelper
-
-    def execute
-      write_output("\nRAKE task starting", :buffer => true)
-
-      begin
-        validate_parameters
-
-        Maestro.log.info "Inputs: tasks = #{@tasks}"
-
-        shell = Maestro::Util::Shell.new
-        command = create_command
-        shell.create_script(command)
-
-        write_output("\nRunning command:\n----------\n#{command.chomp}\n----------\n")
-        exit_code = shell.run_script_with_delegate(self, :on_output)
-        output = shell.output
-        extract_test_results(output)
-
-        @error = output unless exit_code.success?
-      rescue ConfigError => e
-        @error = e.message
-      rescue Exception => e
-        @error = "Error executing Rake Task: #{e.class} #{e}"
-        Maestro.log.warn("Error executing Rake Task: #{e.class} #{e}: " + e.backtrace.join("\n"))
-      end
-
-      write_output "\n\nRAKE task complete\n"
-      set_error(@error) if @error
-    end
-
-    def on_output(text)
-      write_output(text, :buffer => true)
-    end
-
-    ###########
-    # PRIVATE #
-    ###########
-    private
-
-    def booleanify(value)
-      res = false
-
-      if value
-        if value.is_a?(TrueClass) || value.is_a?(FalseClass)
-          res = value
-        elsif value.is_a?(Fixnum)
-          res = value != 0
-        elsif value.respond_to?(:to_s)
-          value = value.to_s.downcase
-            
-          res = (value == 't' || value == 'true')
-        end
-      end
-      
-      res
-    end
-
-    def valid_executable?(executable)
-      Maestro::Util::Shell.run_command("#{executable} --version")[0].success?
-    end
-
-    def validate_parameters
-      errors = []
-      @ruby_version = ''
-      @rubygems_version = ''
-
-      @rake_executable = get_field('rake_executable', 'rake')
-
-      @use_rvm = booleanify(get_field('use_rvm', false))
-      @rvm_executable = get_field('rvm_executable', 'rvm')
-
-      @ruby_version = get_field('ruby_version', '')
-
-      @rubygems_version = get_field('rubygems_version', '')
-
-      @use_bundle = booleanify(get_field('use_bundle', false))
-      @bundle_executable = get_field('bundle_executable', 'bundle')
-
-      @environment = get_field('environment', '')
-      @env = @environment.empty? ? "" : "#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} #{@environment.gsub(/(&&|[;&])\s*$/, '')} && "
-
-      errors << 'rvm not installed' if @use_rvm && !valid_executable?(@rvm_executable)
-      errors << 'missing ruby_version' if @use_rvm && @ruby_version.empty?
-      # this check wasn't done previousy
-      errors << 'bundle not installed' if @use_bundle && !valid_executable?("#{rvm_prefix} #{@bundle_executable}")
-      errors << 'rake not installed' unless valid_executable?("#{rvm_prefix} #{@rake_executable}")
-
-      @tasks = get_field('tasks', '')
-      @gems = get_field('gems', '')
-
-      @path = get_field('path') || get_field('scm_path')
-      errors << 'missing field path' if @path.nil?
-      errors << "not found path '#{@path}'" if !@path.nil? && !File.exist?(@path)
-
-      update_ruby_rubygems
-
-      if @use_rvm
-        errors << "Requested Ruby version #{@ruby_version} not available" unless @installed_ruby_version && @ruby_version == @installed_ruby_version
-        errors << "Requested RubyGems version #{@rubygems_version} not available" unless @rubygems_version.empty? || (@installed_rubygems_version && @rubygems_version == @installed_rubygems_version)
-      end
-
-      process_tasks_field
-      process_gems_field
-
-      if !errors.empty?
-        raise ConfigError, "Configuration errors: #{errors.join(', ')}"
-      end
-    end
-
-    def process_gems_field
-      if !@gems.empty? && is_json(@gems)
-        @gems = JSON.parse(@gems) if @gems.is_a? String
-      end
-    
-      if !(@gems.is_a? Array)
-        @gems = nil
-        Maestro.log.warn "Invalid Format For gems Field #{@gems} - ignoring"
-      end
+  module RakePlugin
+    class ConfigError < StandardError
     end
   
-    def process_tasks_field
-      begin
-        if is_json(@tasks)
-          @tasks = JSON.parse(@tasks) if @tasks.is_a? String
+    class RakeWorker < Maestro::MaestroWorker
+      include Maestro::Plugin::RubyHelper
+  
+      def execute
+        write_output("\nRAKE task starting", :buffer => true)
+  
+        begin
+          validate_parameters
+  
+          Maestro.log.info "Inputs: tasks = #{@tasks}"
+  
+          shell = Maestro::Util::Shell.new
+          command = create_command
+          shell.create_script(command)
+  
+          write_output("\nRunning command:\n----------\n#{command.chomp}\n----------\n")
+          exit_code = shell.run_script_with_delegate(self, :on_output)
+          output = shell.output
+          extract_test_results(output)
+  
+          @error = output unless exit_code.success?
+        rescue ConfigError => e
+          @error = e.message
+        rescue Exception => e
+          @error = "Error executing Rake Task: #{e.class} #{e}"
+          Maestro.log.warn("Error executing Rake Task: #{e.class} #{e}: " + e.backtrace.join("\n"))
         end
-      rescue Exception  
+  
+        write_output "\n\nRAKE task complete\n"
+        set_error(@error) if @error
       end
-      
-      if @tasks.is_a? Array
-        @tasks = @tasks.join(' ')
+  
+      def on_output(text)
+        write_output(text, :buffer => true)
       end
-    end
-
-    def rvm_prefix
-      "#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} RUBYOPT=\n#{@env}#{@use_rvm ? "#{script_prefix} rvm use #{@ruby_version} && " : ''}"
-    end
-
-    def create_command
-      # TODO consider something in standard ruby such as system({"MYVAR" => "42"}, "echo $MYVAR")
-      if @use_bundle
-        # ensure we are not overriding a BUNDLE_WITHOUT variable set in the fields
-        if @environment.include?("BUNDLE_WITHOUT=")
-          bundle_without = ""
-        else
-          # ENV Var is just one way to get bundle to do without... if you 'bundle config without....' it is stickier and is in
-          # the .bundle dir.
-          # rake seems to use this more official way of setting... and even though it does clear the .bundle dir on a clean
-          # that doesn't help if rake isn't installed!
-          bundle_without = "&& #{@bundle_executable} config --delete without && #{Maestro::Util::Shell::ENV_EXPORT_COMMAND} BUNDLE_WITHOUT='' "
-        end
-        bundle = "#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} BUNDLE_GEMFILE=#{@path}/Gemfile #{bundle_without}&& #{@bundle_executable} install && #{@bundle_executable} exec"
-      end
-      
-      if @gems
-        Maestro.log.debug "Install Gems #{@gems.join(', ')}"
-        gems_script = ''
-        @gems.each do |gem_name|
-          gems_script += "gem install #{gem_name} --no-ri --no-rdoc && "
-        end
-      end
-
-      shell_command = <<-Rake
-#{rvm_prefix} cd #{@path} && #{@gems ? gems_script : ''} #{@use_bundle ? bundle : ''} #{@rake_executable} --trace #{@tasks}
-Rake
-
-      set_field('command', shell_command)
-
-      Maestro.log.debug("Running #{shell_command}")
-      shell_command
-    end
-
-    def extract_test_results(output)      
-      # Post-process output to try to gather some semi-useful info (like, how many tests were run, etc)
-      # I figure this is going to be pretty version-specific
-      tests = output.scan(/\n\*\* Execute (spec(?:\:\w*)?)(.*)Finished in (\d*(?:\.\d+)?) seconds\n*(\d+) examples, (\d+) failures\n/m)
-      
-      if tests and !tests.empty?
-        Maestro.log.info "Found #{tests.length} test blocks"
-        test_meta = []
-
-        tests.each do |test|
-          # [0] = test name
-          # [1] = test output  -- we can run further regexes to extract failing tests if we want
-          # [2] = duration
-          # [3] = # tests
-          # [4] = # failures
-          test_count = test[3].to_i
-          fail_count = test[4].to_i
-          pass_count = test_count - fail_count
-          test_meta << { :spec => test[0], :duration => test[2], :tests => test[3], :passed => pass_count, :failures => test[4] }
-          write_output("\nFound test results: spec: #{test[0]}, duration: #{test[2]}, tests: #{test[3]}, passed: #{pass_count}, failures: #{test[4]}", :buffer => true)
+  
+      ###########
+      # PRIVATE #
+      ###########
+      private
+  
+      def booleanify(value)
+        res = false
+  
+        if value
+          if value.is_a?(TrueClass) || value.is_a?(FalseClass)
+            res = value
+          elsif value.is_a?(Fixnum)
+            res = value != 0
+          elsif value.respond_to?(:to_s)
+            value = value.to_s.downcase
+              
+            res = (value == 't' || value == 'true')
+          end
         end
         
-        save_output_value('tests', test_meta)
-      else
-        write_output("\nNo test results found", :buffer => true)
+        res
+      end
+  
+      def valid_executable?(executable)
+        Maestro::Util::Shell.run_command("#{executable} --version")[0].success?
+      end
+  
+      def validate_parameters
+        errors = []
+        @ruby_version = ''
+        @rubygems_version = ''
+  
+        @rake_executable = get_field('rake_executable', 'rake')
+  
+        @use_rvm = booleanify(get_field('use_rvm', false))
+        @rvm_executable = get_field('rvm_executable', 'rvm')
+  
+        @ruby_version = get_field('ruby_version', '')
+  
+        @rubygems_version = get_field('rubygems_version', '')
+  
+        @use_bundle = booleanify(get_field('use_bundle', false))
+        @bundle_executable = get_field('bundle_executable', 'bundle')
+  
+        @environment = get_field('environment', '')
+        @env = @environment.empty? ? "" : "#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} #{@environment.gsub(/(&&|[;&])\s*$/, '')} && "
+  
+        errors << 'rvm not installed' if @use_rvm && !valid_executable?(@rvm_executable)
+        errors << 'missing ruby_version' if @use_rvm && @ruby_version.empty?
+        # this check wasn't done previousy
+        errors << 'bundle not installed' if @use_bundle && !valid_executable?("#{rvm_prefix} #{@bundle_executable}")
+        errors << 'rake not installed' unless valid_executable?("#{rvm_prefix} #{@rake_executable}")
+  
+        @tasks = get_field('tasks', '')
+        @gems = get_field('gems', '')
+  
+        @path = get_field('path') || get_field('scm_path')
+        errors << 'missing field path' if @path.nil?
+        errors << "not found path '#{@path}'" if !@path.nil? && !File.exist?(@path)
+  
+        update_ruby_rubygems
+  
+        if @use_rvm
+          errors << "Requested Ruby version #{@ruby_version} not available" unless @installed_ruby_version && @ruby_version == @installed_ruby_version
+          errors << "Requested RubyGems version #{@rubygems_version} not available" unless @rubygems_version.empty? || (@installed_rubygems_version && @rubygems_version == @installed_rubygems_version)
+        end
+  
+        process_tasks_field
+        process_gems_field
+  
+        if !errors.empty?
+          raise ConfigError, "Configuration errors: #{errors.join(', ')}"
+        end
+      end
+  
+      def process_gems_field
+        if !@gems.empty? && is_json(@gems)
+          @gems = JSON.parse(@gems) if @gems.is_a? String
+        end
+      
+        if !(@gems.is_a? Array)
+          @gems = nil
+          Maestro.log.warn "Invalid Format For gems Field #{@gems} - ignoring"
+        end
+      end
+    
+      def process_tasks_field
+        begin
+          if is_json(@tasks)
+            @tasks = JSON.parse(@tasks) if @tasks.is_a? String
+          end
+        rescue Exception  
+        end
+        
+        if @tasks.is_a? Array
+          @tasks = @tasks.join(' ')
+        end
+      end
+  
+      def rvm_prefix
+        "#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} RUBYOPT=\n#{@env}#{@use_rvm ? "#{script_prefix} rvm use #{@ruby_version} && " : ''}"
+      end
+  
+      def create_command
+        # TODO consider something in standard ruby such as system({"MYVAR" => "42"}, "echo $MYVAR")
+        if @use_bundle
+          # ensure we are not overriding a BUNDLE_WITHOUT variable set in the fields
+          if @environment.include?("BUNDLE_WITHOUT=")
+            bundle_without = ""
+          else
+            # ENV Var is just one way to get bundle to do without... if you 'bundle config without....' it is stickier and is in
+            # the .bundle dir.
+            # rake seems to use this more official way of setting... and even though it does clear the .bundle dir on a clean
+            # that doesn't help if rake isn't installed!
+            bundle_without = "&& #{@bundle_executable} config --delete without && #{Maestro::Util::Shell::ENV_EXPORT_COMMAND} BUNDLE_WITHOUT='' "
+          end
+          bundle = "#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} BUNDLE_GEMFILE=#{@path}/Gemfile #{bundle_without}&& #{@bundle_executable} install && #{@bundle_executable} exec"
+        end
+        
+        if @gems
+          Maestro.log.debug "Install Gems #{@gems.join(', ')}"
+          gems_script = ''
+          @gems.each do |gem_name|
+            gems_script += "gem install #{gem_name} --no-ri --no-rdoc && "
+          end
+        end
+  
+        shell_command = <<-Rake
+  #{rvm_prefix} cd #{@path} && #{@gems ? gems_script : ''} #{@use_bundle ? bundle : ''} #{@rake_executable} --trace #{@tasks}
+  Rake
+  
+        set_field('command', shell_command)
+  
+        Maestro.log.debug("Running #{shell_command}")
+        shell_command
+      end
+  
+      def extract_test_results(output)      
+        # Post-process output to try to gather some semi-useful info (like, how many tests were run, etc)
+        # I figure this is going to be pretty version-specific
+        tests = output.scan(/\n\*\* Execute (spec(?:\:\w*)?)(.*)Finished in (\d*(?:\.\d+)?) seconds\n*(\d+) examples, (\d+) failures\n/m)
+        
+        if tests and !tests.empty?
+          Maestro.log.info "Found #{tests.length} test blocks"
+          test_meta = []
+  
+          tests.each do |test|
+            # [0] = test name
+            # [1] = test output  -- we can run further regexes to extract failing tests if we want
+            # [2] = duration
+            # [3] = # tests
+            # [4] = # failures
+            test_count = test[3].to_i
+            fail_count = test[4].to_i
+            pass_count = test_count - fail_count
+            test_meta << { :spec => test[0], :duration => test[2], :tests => test[3], :passed => pass_count, :failures => test[4] }
+            write_output("\nFound test results: spec: #{test[0]}, duration: #{test[2]}, tests: #{test[3]}, passed: #{pass_count}, failures: #{test[4]}", :buffer => true)
+          end
+          
+          save_output_value('tests', test_meta)
+        else
+          write_output("\nNo test results found", :buffer => true)
+        end
       end
     end
   end

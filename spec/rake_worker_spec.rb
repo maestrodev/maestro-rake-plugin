@@ -17,7 +17,7 @@
 
 require 'spec_helper'
 
-describe MaestroDev::RakeWorker do
+describe MaestroDev::RakePlugin::RakeWorker do
 
   before(:all) do
     Maestro::MaestroWorker.mock!
