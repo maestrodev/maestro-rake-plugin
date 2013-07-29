@@ -5,7 +5,7 @@
     "license": "Apache 2.0",
     "author":  "MaestroDev",
     "version": "updated at build time",
-    "class":   "MaestroDev::RakePlugin::RakeWorker",
+    "class":   "MaestroDev::Plugin::RakeWorker",
     "type":    "ruby",
     "dependencies":[
     ],

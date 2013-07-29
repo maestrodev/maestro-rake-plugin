@@ -5,40 +5,26 @@ require 'maestro_shell'
 require 'ruby_helper'
 
 module MaestroDev
-  module RakePlugin
-    class ConfigError < StandardError
-    end
+  module Plugin
   
     class RakeWorker < Maestro::MaestroWorker
       include Maestro::Plugin::RubyHelper
   
       def execute
-        write_output("\nRAKE task starting", :buffer => true)
+        validate_parameters
   
-        begin
-          validate_parameters
+        Maestro.log.info "Inputs: tasks = #{@tasks}"
   
-          Maestro.log.info "Inputs: tasks = #{@tasks}"
+        shell = Maestro::Util::Shell.new
+        command = create_command
+        shell.create_script(command)
   
-          shell = Maestro::Util::Shell.new
-          command = create_command
-          shell.create_script(command)
+        write_output("\nRunning command:\n----------\n#{command.chomp}\n----------\n")
+        exit_code = shell.run_script_with_delegate(self, :on_output)
+        output = shell.output
+        extract_test_results(output)
   
-          write_output("\nRunning command:\n----------\n#{command.chomp}\n----------\n")
-          exit_code = shell.run_script_with_delegate(self, :on_output)
-          output = shell.output
-          extract_test_results(output)
-  
-          @error = output unless exit_code.success?
-        rescue ConfigError => e
-          @error = e.message
-        rescue Exception => e
-          @error = "Error executing Rake Task: #{e.class} #{e}"
-          Maestro.log.warn("Error executing Rake Task: #{e.class} #{e}: " + e.backtrace.join("\n"))
-        end
-  
-        write_output "\n\nRAKE task complete\n"
-        set_error(@error) if @error
+        raise PluginError, "Error running rake tasks '#{@tasks.empty? ? '[default]' : @tasks}'" unless exit_code.success?
       end
   
       def on_output(text)
