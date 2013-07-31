@@ -187,7 +187,7 @@ module MaestroDev
 
             test[2] = '0' if test[2].nil?
             test_name = test[0]
-            duration = test[2].to_i * 60 + test[3]
+            duration = test[2].to_i * 60 + test[3].to_i
             test_count = test[4].to_i
             fail_count = test[5].to_i
             pass_count = test_count - fail_count
