@@ -171,7 +171,7 @@ module MaestroDev
       def extract_test_results(output)      
         # Post-process output to try to gather some semi-useful info (like, how many tests were run, etc)
         # I figure this is going to be pretty version-specific
-        tests = output.scan(/\n\*\* Execute (spec(?:\:\w*)?)(.*)Finished in (\d*(?:\.\d+)?) seconds\n*(\d+) examples, (\d+) failures\n/m)
+        tests = output.scan(/\n\*\* Execute (spec(?:\:\w*)?)(.*)Finished in (?:(\d*(?:\.\d+)?) minutes )?(\d*(?:\.\d+)?) seconds\n*(\d+) examples, (\d+) failures\n/m)
         
         if tests and !tests.empty?
           Maestro.log.info "Found #{tests.length} test blocks"
@@ -180,14 +180,19 @@ module MaestroDev
           tests.each do |test|
             # [0] = test name
             # [1] = test output  -- we can run further regexes to extract failing tests if we want
-            # [2] = duration
-            # [3] = # tests
-            # [4] = # failures
-            test_count = test[3].to_i
-            fail_count = test[4].to_i
+            # [2] = duration (mins - optional - newer rake)
+            # [3] = duration (seconds)
+            # [4] = # tests
+            # [5] = # failures
+
+            test[2] = '0' if test[2].nil?
+            test_name = test[0]
+            duration = test[2].to_i * 60 + test[3]
+            test_count = test[4].to_i
+            fail_count = test[5].to_i
             pass_count = test_count - fail_count
-            test_meta << { :spec => test[0], :duration => test[2], :tests => test[3], :passed => pass_count, :failures => test[4] }
-            write_output("\nFound test results: spec: #{test[0]}, duration: #{test[2]}, tests: #{test[3]}, passed: #{pass_count}, failures: #{test[4]}", :buffer => true)
+            test_meta << { :spec => test_name, :duration => duration, :tests => test_count, :passed => pass_count, :failures => fail_count }
+            write_output("\nFound test results: spec: #{test_name}, duration: #{duration}, tests: #{test_count}, passed: #{pass_count}, failures: #{fail_count}", :buffer => true)
           end
           
           save_output_value('tests', test_meta)
