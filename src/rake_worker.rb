@@ -85,7 +85,7 @@ module MaestroDev
         errors << 'rake not installed' unless valid_executable?("#{rvm_prefix} #{@rake_executable}")
   
         @tasks = get_field('tasks', '')
-        @gems = get_field('gems', '')
+        @gems = get_field('gems', [])
   
         @path = get_field('path') || get_field('scm_path')
         errors << 'missing field path' if @path.nil?
@@ -111,9 +111,9 @@ module MaestroDev
           @gems = JSON.parse(@gems) if @gems.is_a? String
         end
       
-        if !(@gems.is_a? Array)
+        if !@gems.is_a?(Array)
+          Maestro.log.warn "Invalid Format For gems Field #{@gems} - ignoring [#{@gems.class.name}] #{@gems}"
           @gems = nil
-          Maestro.log.warn "Invalid Format For gems Field #{@gems} - ignoring"
         end
       end
     

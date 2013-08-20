@@ -83,6 +83,18 @@ describe MaestroDev::Plugin::RakeWorker do
         workitem['fields']['__error__'].should be_nil
       end
     end
+
+    context "when using gems" do
+      let(:fields) {{
+        'rake_executable' => 'echo 1',
+        'gems' => [],
+        'path' => '/tmp'
+      }}
+
+      it "should not have errors" do
+        workitem['fields']['__error__'].should be_nil
+      end
+    end
   end
 
   describe 'execute' do
