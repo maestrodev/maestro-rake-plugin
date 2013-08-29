@@ -1,5 +1,6 @@
 maestro-rake-plugin
 ====================
+[![Code Climate](https://codeclimate.com/github/maestrodev/maestro-rake-plugin.png)](https://codeclimate.com/github/maestrodev/maestro-rake-plugin)
 
 A Maestro Plugin that provides integration with Rake (direct, via rvm, via bundler)
 
