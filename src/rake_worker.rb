@@ -13,8 +13,6 @@ module MaestroDev
       def execute
         validate_parameters
   
-        Maestro.log.info "Inputs: tasks = #{@tasks}"
-  
         shell = Maestro::Util::Shell.new
         command = create_command
         shell.create_script(command)
@@ -36,24 +34,6 @@ module MaestroDev
       ###########
       private
   
-      def booleanify(value)
-        res = false
-  
-        if value
-          if value.is_a?(TrueClass) || value.is_a?(FalseClass)
-            res = value
-          elsif value.is_a?(Fixnum)
-            res = value != 0
-          elsif value.respond_to?(:to_s)
-            value = value.to_s.downcase
-              
-            res = (value == 't' || value == 'true')
-          end
-        end
-        
-        res
-      end
-  
       def valid_executable?(executable)
         Maestro::Util::Shell.run_command("#{executable} --version")[0].success?
       end
@@ -65,14 +45,14 @@ module MaestroDev
   
         @rake_executable = get_field('rake_executable', 'rake')
   
-        @use_rvm = booleanify(get_field('use_rvm', false))
+        @use_rvm = get_boolean_field('use_rvm')
         @rvm_executable = get_field('rvm_executable', 'rvm')
   
         @ruby_version = get_field('ruby_version', '')
   
         @rubygems_version = get_field('rubygems_version', '')
   
-        @use_bundle = booleanify(get_field('use_bundle', false))
+        @use_bundle = get_boolean_field('use_bundle')
         @bundle_executable = get_field('bundle_executable', 'bundle')
   
         @environment = get_field('environment', '')

@@ -1,4 +1,5 @@
 {
+  "image": "rake.png",
   "tasks": [{
     "name": "rake",
     "description": "Run A Rake Task",
