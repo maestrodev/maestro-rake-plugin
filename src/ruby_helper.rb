@@ -55,6 +55,19 @@ SCRIPT
 
           if install.exit_code.success?
             @installed_ruby_verion = version
+            write_output("\nRuby version #{version} installed successfully")
+          else
+            # There have been reports that the install apparently fails, but the next time round
+            # the correct version of ruby is installed.
+            # So if the install "fails" we shall re-do the 'use' test and if that succeeds then
+            # we shall consider the install a success
+            use.run_script
+            if use.exit_code.success?
+              @installed_ruby_verion = version
+              write_output("\nRuby version #{version} install indicated failure, but appears to be installed successfully")
+            else
+              write_output("\nRuby version #{version} not installed, exit code #{install.exit_code.exit_code}")
+            end
           end
 
           return install.exit_code
