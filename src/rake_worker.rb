@@ -60,9 +60,6 @@ module MaestroDev
   
         errors << 'rvm not installed' if @use_rvm && !valid_executable?(@rvm_executable)
         errors << 'missing ruby_version' if @use_rvm && @ruby_version.empty?
-        # this check wasn't done previousy
-        errors << 'bundle not installed' if @use_bundle && !valid_executable?("#{rvm_prefix} #{@bundle_executable}")
-        errors << 'rake not installed' unless valid_executable?("#{rvm_prefix} #{@rake_executable}")
   
         @tasks = get_field('tasks', '')
         @gems = get_field('gems', [])
@@ -77,6 +74,11 @@ module MaestroDev
           errors << "Requested Ruby version #{@ruby_version} not available" unless @installed_ruby_version && @ruby_version == @installed_ruby_version
           errors << "Requested RubyGems version #{@rubygems_version} not available" unless @rubygems_version.empty? || (@installed_rubygems_version && @rubygems_version == @installed_rubygems_version)
         end
+
+        # this check wasn't done previousy
+        # We need to do after rvm check, coz that might install rvm and that will affect whether these two will work
+        errors << 'bundle not installed' if @use_bundle && !valid_executable?("#{rvm_prefix} #{@bundle_executable}")
+        errors << 'rake not installed' unless valid_executable?("#{rvm_prefix} #{@rake_executable}")
   
         process_tasks_field
         process_gems_field
