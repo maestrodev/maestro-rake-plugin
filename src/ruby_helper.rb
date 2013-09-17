@@ -54,7 +54,7 @@ SCRIPT
           install.run_script_with_delegate(self, :on_output)
 
           if install.exit_code.success?
-            @installed_ruby_verion = version
+            @installed_ruby_version = version
             write_output("\nRuby version #{version} installed successfully")
           else
             # There have been reports that the install apparently fails, but the next time round
@@ -63,8 +63,10 @@ SCRIPT
             # we shall consider the install a success
             use.run_script
             if use.exit_code.success?
-              @installed_ruby_verion = version
+              @installed_ruby_version = version
               write_output("\nRuby version #{version} install indicated failure, but appears to be installed successfully")
+
+              return use.exit_code
             else
               write_output("\nRuby version #{version} not installed, exit code #{install.exit_code.exit_code}")
             end
