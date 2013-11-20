@@ -113,7 +113,7 @@ module MaestroDev
       end
   
       def rvm_prefix
-        "#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} RUBYOPT=\n#{@env}#{@use_rvm ? "#{script_prefix} rvm use #{@ruby_version} && " : ''}"
+        "#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} RUBYOPT=\n#{@env}#{"#{script_prefix} " if @use_rvm}"
       end
   
       def create_command
@@ -141,7 +141,7 @@ module MaestroDev
         end
   
         shell_command = <<-Rake
-  #{rvm_prefix} cd #{@path} && #{@gems ? gems_script : ''} #{@use_bundle ? bundle : ''} #{@rake_executable} --trace #{@tasks}
+  #{rvm_prefix} cd #{@path} && #{"rvm use #{@ruby_version} && " if @use_rvm}#{@gems ? gems_script : ''} #{@use_bundle ? bundle : ''} #{@rake_executable} --trace #{@tasks}
   Rake
   
         set_field('command', shell_command)

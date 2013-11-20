@@ -115,7 +115,7 @@ describe MaestroDev::Plugin::RakeWorker do
       }) }
 
       its(:error) { should be_nil }
-      its(:output) { should include("rake, version") }
+      its(:output) { should include("rake, version", "cd #{path} && rvm use #{ruby_version}") }
       its(:output) { should_not include("ERROR") }
     end
 
@@ -143,9 +143,9 @@ describe MaestroDev::Plugin::RakeWorker do
       }) }
 
       its(:error) { should be_nil }
-      its(:output) { should include("rake, version") }
+      its(:output) { should include("rake, version", "cd #{path} && rvm use #{ruby_version}") }
       its(:output) { should_not include("ERROR") }
-    end      
+    end
     
     context "when running rake using scm path w/o rvm & bundler" do
       let(:fields) { super().merge({
