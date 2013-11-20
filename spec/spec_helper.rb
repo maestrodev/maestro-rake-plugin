@@ -17,10 +17,12 @@
 
 require 'rubygems'
 require 'rspec'
+require 'maestro_plugin/logging_stdout'
 
 $LOAD_PATH.unshift(File.dirname(__FILE__) + '/../src') unless $LOAD_PATH.include?(File.dirname(__FILE__) + '/../src')
 
-require 'rake_worker'
-
 RSpec.configure do |config|
+  config.before(:each) do
+    Maestro::MaestroWorker.mock!
+  end
 end

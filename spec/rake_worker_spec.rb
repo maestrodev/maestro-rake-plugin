@@ -16,6 +16,7 @@
 # under the License.
 
 require 'spec_helper'
+require 'rake_worker'
 
 describe MaestroDev::Plugin::RakeWorker do
 
@@ -34,9 +35,7 @@ describe MaestroDev::Plugin::RakeWorker do
   let(:workitem) {{ 'fields' => fields }}
 
   describe 'valid_workitem?' do
-    it "should validate fields" do
-      workitem['fields']['__error__'].should include('missing field path')
-    end
+    its(:error) { should include('missing field path') }
 
     context "when rake, rvm, bundle not available" do
       let(:fields) {{
@@ -49,12 +48,7 @@ describe MaestroDev::Plugin::RakeWorker do
         'use_bundle' => true
       }}
 
-      it "should detect" do
-        workitem['fields']['__error__'].should include("rake not installed")
-        workitem['fields']['__error__'].should include("rvm not installed")
-        workitem['fields']['__error__'].should include("bundle not installed")
-        workitem['fields']['__error__'].should include("missing ruby_version")
-      end
+      its(:error) { should include("rake not installed", "rvm not installed", "bundle not installed", "missing ruby_version") }
     end
 
     context "when using rvm" do
@@ -66,10 +60,7 @@ describe MaestroDev::Plugin::RakeWorker do
         'rubygems_version' => '99.99.99'
       }}
 
-      it "should validate rvm fields" do
-        workitem['fields']['__error__'].should include("Requested Ruby version")
-        workitem['fields']['__error__'].should include("Requested RubyGems version")
-      end
+      its(:error) { should include("Requested Ruby version", "Requested RubyGems version") }
     end
 
     context "when using scm path" do
@@ -78,10 +69,8 @@ describe MaestroDev::Plugin::RakeWorker do
         'scm_path' => '/tmp'
       }}
 
-      it "should validate with only scm path" do
-        workitem['__output__'].should include('1')
-        workitem['fields']['__error__'].should be_nil
-      end
+      its(:error) { should be_nil }
+      its(:output) { should include('1') }
     end
 
     context "when using gems" do
@@ -91,9 +80,7 @@ describe MaestroDev::Plugin::RakeWorker do
         'path' => '/tmp'
       }}
 
-      it "should not have errors" do
-        workitem['fields']['__error__'].should be_nil
-      end
+      its(:error) { should be_nil }
     end
   end
 
@@ -116,7 +103,7 @@ describe MaestroDev::Plugin::RakeWorker do
 #      subject.perform(:execute, workitem)
 #
 #      puts workitem
-#      workitem['fields']['__error__'].should be_nil
+#    its(:error) { should be_nil }
 #      workitem['fields']['output'].should include("rake, version")
 #      workitem['fields']['output'].should_not include("ERROR")
 #    end
@@ -127,11 +114,9 @@ describe MaestroDev::Plugin::RakeWorker do
         'use_bundle' => false
       }) }
 
-      it 'should run rake with rvm' do
-        workitem['fields']['__error__'].should be_nil
-        workitem['__output__'].should include("rake, version")
-        workitem['__output__'].should_not include("ERROR")
-      end
+      its(:error) { should be_nil }
+      its(:output) { should include("rake, version") }
+      its(:output) { should_not include("ERROR") }
     end
 
     # This whole thing is running non-mri
@@ -145,7 +130,7 @@ describe MaestroDev::Plugin::RakeWorker do
 #         @test_participant.stubs(:update_ruby => [Maestro::Shell::ExitCode.new(0), "all clear"])
 #         @test_participant.stubs(:validate_output => 'using /some/path/jruby-1.6.4  rake, version 0.9.2')
 #
-#      workitem['fields']['__error__'].should be_nil
+#      its(:error) { should be_nil }
 #      workitem['fields']['output'].should include("rake, version")
 #      workitem['fields']['output'].should include("jruby-1.6.4")
 #      workitem['fields']['output'].should_not include("ERROR")
@@ -157,11 +142,9 @@ describe MaestroDev::Plugin::RakeWorker do
         'environment' => 'CC=/usr/bin/gcc-4.2'
       }) }
 
-      it 'should run rake with rvm and bundler' do
-        workitem['fields']['__error__'].should be_nil
-        workitem['__output__'].should include("rake, version")
-        workitem['__output__'].should_not include("ERROR")
-      end
+      its(:error) { should be_nil }
+      its(:output) { should include("rake, version") }
+      its(:output) { should_not include("ERROR") }
     end      
     
     context "when running rake using scm path w/o rvm & bundler" do
@@ -175,11 +158,9 @@ describe MaestroDev::Plugin::RakeWorker do
         'rake_executable' => 'echo "fake rake, version"'
       }) }
 
-      it 'should run rake using scm path w/o rvm & bundler' do
-        workitem['fields']['__error__'].should be_nil
-        workitem['__output__'].should include("rake, version")
-        workitem['__output__'].should_not include("ERROR")
-      end
+      its(:error) { should be_nil }
+      its(:output) { should include("rake, version") }
+      its(:output) { should_not include("ERROR") }
     end
   end
 
