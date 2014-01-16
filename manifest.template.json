@@ -1,5 +1,18 @@
 {
   "image": "rake.png",
+  "source_types": [
+    {
+      "name": "Rake",
+      "options": {
+        "path": "String",
+        "use_rvm": "Boolean",
+        "ruby_version": "String",
+        "rubygems_version": "String",
+        "use_bundle": "Boolean",
+        "environment": "String"
+      }
+    }
+  ],
   "tasks": [
     {
       "name": "rake",
