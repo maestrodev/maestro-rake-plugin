@@ -59,7 +59,6 @@ module MaestroDev
         @env = @environment.empty? ? "" : "#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} #{@environment.gsub(/(&&|[;&])\s*$/, '')} && "
   
         errors << 'rvm not installed' if @use_rvm && !valid_executable?(@rvm_executable)
-        errors << 'missing ruby_version' if @use_rvm && @ruby_version.empty?
   
         @tasks = get_field('tasks', '')
         @gems = get_field('gems', [])
@@ -71,7 +70,7 @@ module MaestroDev
         update_ruby_rubygems
   
         if @use_rvm
-          errors << "Requested Ruby version #{@ruby_version} not available" unless @installed_ruby_version && @ruby_version == @installed_ruby_version
+          errors << "Requested Ruby version #{@ruby_version} not available" unless @ruby_version.empty? || (@installed_ruby_version && @ruby_version == @installed_ruby_version)
           errors << "Requested RubyGems version #{@rubygems_version} not available" unless @rubygems_version.empty? || (@installed_rubygems_version && @rubygems_version == @installed_rubygems_version)
         end
 
@@ -141,7 +140,7 @@ module MaestroDev
         end
   
         shell_command = <<-Rake
-  #{rvm_prefix} cd #{@path} && #{"rvm use #{@ruby_version} && " if @use_rvm}#{@gems ? gems_script : ''} #{@use_bundle ? bundle : ''} #{@rake_executable} --trace #{@tasks}
+  #{rvm_prefix} cd #{@path} && #{"rvm use #{@ruby_version} && " if @use_rvm and !@ruby_version.empty?}#{@gems ? gems_script : ''} #{@use_bundle ? bundle : ''} #{@rake_executable} --trace #{@tasks}
   Rake
   
         set_field('command', shell_command)

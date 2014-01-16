@@ -43,12 +43,12 @@ describe MaestroDev::Plugin::RakeWorker do
         'path' => '/tmp',
         'rake_executable' => '/dev/nul',
         'rvm_executable' => '/dev/nul',
-        'bundle_executable' => '/dev/nul', 
+        'bundle_executable' => '/dev/nul',
         'use_rvm' => true,
         'use_bundle' => true
       }}
 
-      its(:error) { should include("rake not installed", "rvm not installed", "bundle not installed", "missing ruby_version") }
+      its(:error) { should include("rake not installed", "rvm not installed", "bundle not installed") }
     end
 
     context "when using rvm" do
@@ -117,6 +117,16 @@ describe MaestroDev::Plugin::RakeWorker do
       its(:error) { should be_nil }
       its(:output) { should include("rake, version", "cd #{path} && rvm use #{ruby_version}") }
       its(:output) { should_not include("ERROR") }
+
+      context "and ruby_version not set" do
+        let(:fields) { super().merge({
+          'ruby_version' => nil
+        }) }
+
+        its(:error) { should be_nil }
+        its(:output) { should include("rake, version", "cd #{path} &&   rake") }
+        its(:output) { should_not include("ERROR") }
+      end
     end
 
     # This whole thing is running non-mri

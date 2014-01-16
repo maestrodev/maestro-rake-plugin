@@ -26,7 +26,7 @@ SCRIPT
     
       # Update ruby and rubygems if needed
       def update_ruby_rubygems
-        return unless @use_rvm
+        return unless @use_rvm && !@ruby_version.empty?
 
         write_output "\nUsing RVM w/Ruby Version #{@ruby_version}"
       
