@@ -1,72 +1,77 @@
 {
   "image": "rake.png",
-  "tasks": [{
-    "name": "rake",
-    "description": "Run A Rake Task",
-    "license": "Apache 2.0",
-    "author":  "MaestroDev",
-    "version": "updated at build time",
-    "class":   "MaestroDev::Plugin::RakeWorker",
-    "type":    "ruby",
-    "dependencies":[
-    ],
-    "task":{
-      "command": "/rake/execute",
-      "description": "Run A Rake Task Using RVM and Bundler",
+  "tasks": [
+    {
       "name": "rake",
-      "inputs": {
-        "path": {
-          "description": "path to execute from",
-          "required": false,
-          "type": "String",
-          "value": null
+      "description": "Run A Rake Task",
+      "license": "Apache 2.0",
+      "author": "MaestroDev",
+      "version": "updated at build time",
+      "class": "MaestroDev::Plugin::RakeWorker",
+      "type": "ruby",
+      "dependencies": [],
+      "task": {
+        "command": "/rake/execute",
+        "description": "Run A Rake Task Using RVM and Bundler",
+        "name": "rake",
+        "inputs": {
+          "path": {
+            "description": "path to execute from",
+            "required": false,
+            "type": "String",
+            "value": null
+          },
+          "tasks": {
+            "description": "list of rake tasks to execute",
+            "required": false,
+            "type": "Array",
+            "value": []
+          },
+          "use_rvm": {
+            "description": "should we run rake in a rvm environment",
+            "required": true,
+            "type": "Boolean",
+            "value": false
+          },
+          "ruby_version": {
+            "description": "version of ruby tu use with rvm",
+            "required": false,
+            "type": "String",
+            "value": ""
+          },
+          "rubygems_version": {
+            "description": "version of rubygems to use",
+            "required": false,
+            "type": "String",
+            "value": ""
+          },
+          "use_bundle": {
+            "description": "run rake with bundler",
+            "required": true,
+            "type": "Boolean",
+            "value": false
+          },
+          "environment": {
+            "description": "environment variables to set for the execution",
+            "required": false,
+            "type": "String",
+            "value": ""
+          },
+          "gems": {
+            "description": "other gems to install",
+            "required": false,
+            "type": "Array",
+            "value": []
+          }
         },
-        "tasks": {
-          "description": "list of rake tasks to execute",
-          "required": false,
-          "type": "Array",
-          "value": []
+        "outputs": {
+          "output": {
+            "type": "String"
+          }
         },
-        "use_rvm": {
-          "description": "should we run rake in a rvm environment",
-          "required": true,
-          "type": "Boolean",
-          "value": false
-        },
-        "ruby_version": {
-          "description": "version of ruby tu use with rvm",
-          "required": false,
-          "type": "String",
-          "value": ""
-        },
-        "rubygems_version": {
-          "description": "version of rubygems to use",
-          "required": false,
-          "type": "String",
-          "value": ""
-        },
-        "use_bundle": {
-          "description": "run rake with bundler",
-          "required": true,
-          "type": "Boolean",
-          "value": false
-        },
-        "environment": {
-          "description": "environment variables to set for the execution",
-          "required": false,
-          "type": "String",
-          "value": ""
-        },
-        "gems": {
-          "description": "other gems to install",
-          "required": false,
-          "type": "Array",
-          "value": []
-        }
-      },
-      "outputs": {"output" : {"type" : "String"}},
-      "tool_name": "Shell",
-      "icon": "rake.png"
+        "tool_name": "Shell",
+        "icon": "rake.png"
+      }
     }
-  }]
+  ]
 }
