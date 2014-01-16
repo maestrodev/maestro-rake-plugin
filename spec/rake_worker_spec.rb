@@ -60,7 +60,7 @@ describe MaestroDev::Plugin::RakeWorker do
         'rubygems_version' => '99.99.99'
       }}
 
-      its(:error) { should include("Requested Ruby version", "Requested RubyGems version") }
+      its(:error) { should match(/Requested RubyGems version .* not available/) }
     end
 
     context "when using scm path" do
