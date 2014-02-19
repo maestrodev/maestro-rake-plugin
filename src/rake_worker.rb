@@ -21,7 +21,7 @@ module MaestroDev
         exit_code = shell.run_script_with_delegate(self, :on_output)
         output = shell.output
         extract_test_results(output)
-  
+
         raise PluginError, "Error running rake tasks '#{@tasks.empty? ? '[default]' : @tasks}'" unless exit_code.success?
       end
   
@@ -72,12 +72,18 @@ module MaestroDev
         if @use_rvm
           errors << "Requested Ruby version #{@ruby_version} not available" unless @ruby_version.empty? || (@installed_ruby_version && @ruby_version == @installed_ruby_version)
           errors << "Requested RubyGems version #{@rubygems_version} not available" unless @rubygems_version.empty? || (@installed_rubygems_version && @rubygems_version == @installed_rubygems_version)
+
+          # Set a default ruby version to use if rvm is specified and no version.  Basically we will use default version configured for rvm
+          if @ruby_version.empty?
+            @ruby_version = 'default'
+            write_output("WARNING: No version of ruby specified for RVM, using 'default'.  Note that this may behave differently depending on the default version configured in RVM.  It is recommended to specify the actual version required.\n")
+          end
         end
 
         # this check wasn't done previousy
         # We need to do after rvm check, coz that might install rvm and that will affect whether these two will work
-        errors << 'bundle not installed' if @use_bundle && !valid_executable?("#{rvm_prefix} #{@bundle_executable}")
-        errors << 'rake not installed' unless valid_executable?("#{rvm_prefix} #{@rake_executable}")
+        errors << 'bundle not installed' if @use_bundle && !valid_executable?("#{ruby_prefix} #{@bundle_executable}")
+        errors << 'rake not installed' unless valid_executable?("#{ruby_prefix} #{@rake_executable}")
   
         process_tasks_field
         process_gems_field
@@ -110,9 +116,13 @@ module MaestroDev
           @tasks = @tasks.join(' ')
         end
       end
-  
+
       def rvm_prefix
-        "#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} RUBYOPT=\n#{@env}#{"#{script_prefix} " if @use_rvm}"
+        @use_rvm ? "#{script_prefix} rvm use #{@ruby_version} && " : ''
+      end
+
+      def ruby_prefix
+        "#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} RUBYOPT=\n#{@env} #{rvm_prefix}"
       end
   
       def create_command
@@ -120,31 +130,29 @@ module MaestroDev
         if @use_bundle
           # ensure we are not overriding a BUNDLE_WITHOUT variable set in the fields
           if @environment.include?("BUNDLE_WITHOUT=")
-            bundle_without = ""
+            bundle_without = nil
           else
             # ENV Var is just one way to get bundle to do without... if you 'bundle config without....' it is stickier and is in
             # the .bundle dir.
             # rake seems to use this more official way of setting... and even though it does clear the .bundle dir on a clean
             # that doesn't help if rake isn't installed!
-            bundle_without = "&& #{@bundle_executable} config --delete without && #{Maestro::Util::Shell::ENV_EXPORT_COMMAND} BUNDLE_WITHOUT='' "
+            bundle_without = "#{@bundle_executable} config --delete without && #{Maestro::Util::Shell::ENV_EXPORT_COMMAND} BUNDLE_WITHOUT=''"
           end
-          bundle = "#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} BUNDLE_GEMFILE=#{@path}/Gemfile #{bundle_without}&& #{@bundle_executable} install && #{@bundle_executable} exec"
+          bundle = "#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} BUNDLE_GEMFILE=#{@path}/Gemfile #{bundle_without ? "&& #{bundle_without} &&" : ''} #{@bundle_executable} install && #{@bundle_executable} exec"
         end
         
-        if @gems
+        if @gems && !@gems.empty?
           Maestro.log.debug "Install Gems #{@gems.join(', ')}"
           gems_script = ''
           @gems.each do |gem_name|
-            gems_script += "gem install #{gem_name} --no-ri --no-rdoc && "
+            gems_script += "gem install #{gem_name} --no-ri --no-rdoc"
           end
         end
   
-        shell_command = <<-Rake
-  #{rvm_prefix} cd #{@path} && #{"rvm use #{@ruby_version} && " if @use_rvm and !@ruby_version.empty?}#{@gems ? gems_script : ''} #{@use_bundle ? bundle : ''} #{@rake_executable} --trace #{@tasks}
-  Rake
+        shell_command = "cd #{@path} && #{ruby_prefix} #{@gems && !@gems.empty? ? "#{gems_script} &&" : ''} #{@use_bundle ? "#{bundle} " : ''} #{@rake_executable} --trace #{@tasks}"
   
         set_field('command', shell_command)
-  
+
         Maestro.log.debug("Running #{shell_command}")
         shell_command
       end

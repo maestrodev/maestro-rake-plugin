@@ -114,18 +114,19 @@ describe MaestroDev::Plugin::RakeWorker do
         'use_bundle' => false
       }) }
 
-      its(:error) { should be_nil }
-      its(:output) { should include("rake, version", "cd #{path} && rvm use #{ruby_version}") }
+      its(:output) { should include("rake, version", "cd #{path}", "rvm use #{ruby_version}") }
       its(:output) { should_not include("ERROR") }
+      its(:error) { should be_nil }
 
       context "and ruby_version not set" do
         let(:fields) { super().merge({
           'ruby_version' => nil
         }) }
 
-        its(:error) { should be_nil }
-        its(:output) { should include("rake, version", "cd #{path} &&   rake") }
+        its(:output) { should include("rake, version") }
+        its(:output) { should match(/cd #{Regexp.quote(path)}.*rake/m) }
         its(:output) { should_not include("ERROR") }
+        its(:error) { should be_nil }
       end
     end
 
@@ -152,9 +153,10 @@ describe MaestroDev::Plugin::RakeWorker do
         'environment' => 'CC=/usr/bin/gcc-4.2'
       }) }
 
-      its(:error) { should be_nil }
-      its(:output) { should include("rake, version", "cd #{path} && rvm use #{ruby_version}") }
+      its(:output) { should_not be_nil }
+      its(:output) { should include("rake, version", "cd #{path}", "rvm use #{ruby_version}") }
       its(:output) { should_not include("ERROR") }
+      its(:error) { should be_nil }
     end
     
     context "when running rake using scm path w/o rvm & bundler" do
