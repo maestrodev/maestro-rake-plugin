@@ -45,9 +45,11 @@ SCRIPT
         use.create_script("#{script_prefix}#{@rvm_executable} use #{version}")
         use.run_script_with_delegate(self, :on_output)
 
-        Maestro.log.debug("RVM use: #{use.to_s} #{!use.exit_code.success? or use.to_s.include?("ERROR:")}")
+        Maestro.log.debug("RVM use: #{use.to_s.chomp}: #{!use.exit_code.success? or use.to_s.include?("ERROR:")}")
         if !use.exit_code.success? or use.to_s.include?("ERROR:")
-          write_output("\nInstalling ruby version #{version}\n", :buffer => true)
+          msg = "Installing ruby version #{version}"
+          Maestro.log.debug(msg)
+          write_output("\n#{msg}\n", :buffer => true)
           install = Maestro::Util::Shell.new
           install.create_script("#{@rvm_executable} install #{version}")
 
