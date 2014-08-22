@@ -98,7 +98,13 @@ module MaestroDev
       
         if !@gems.is_a?(Array)
           Maestro.log.warn "Invalid Format For gems Field #{@gems} - ignoring [#{@gems.class.name}] #{@gems}"
-          @gems = nil
+          @gems = []
+        end
+
+        # ensure the version of bundler is installed
+        if !@bundler_version.nil? and !@bundler_version.empty?
+          @gems ||= []
+          @gems << "bundler -v #{@bundler_version}"
         end
       end
     

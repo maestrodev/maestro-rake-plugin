@@ -170,7 +170,7 @@ describe MaestroDev::Plugin::RakeWorker do
       its(:output) { should include("rake, version", "cd #{path}", "rvm use #{ruby_version}") }
       its(:output) { should_not include("ERROR") }
       its(:error) { should be_nil }
-      it { expect(subject.get_field('command')).to match(/^ rvm use #{ruby_version} &&   export BUNDLE_GEMFILE=.*\/Gemfile && bundle _1.6.5_ config --delete without && export BUNDLE_WITHOUT='' && bundle _1.6.5_ install && bundle _1.6.5_ exec  rake --trace --version$/) }
+      it { expect(subject.get_field('command')).to match(/^ rvm use #{ruby_version} &&  \(gem list bundler -v 1.6.5 -i || gem install bundler -v 1.6.5 --no-ri --no-rdoc\) && export BUNDLE_GEMFILE=.*\/Gemfile && bundle _1.6.5_ config --delete without && export BUNDLE_WITHOUT='' && bundle _1.6.5_ install && bundle _1.6.5_ exec  rake --trace --version$/) }
     end
 
     context "when running rake using scm path w/o rvm & bundler" do
