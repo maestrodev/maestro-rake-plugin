@@ -9,6 +9,7 @@
         "ruby_version": "String",
         "rubygems_version": "String",
         "use_bundle": "Boolean",
+        "bundler_version": "String",
         "environment": "String"
       }
     }
