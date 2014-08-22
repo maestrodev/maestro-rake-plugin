@@ -77,11 +77,6 @@ module MaestroDev
             write_output("WARNING: No version of ruby specified for RVM, using 'default'.  Note that this may behave differently depending on the default version configured in RVM.  It is recommended to specify the actual version required.\n")
           end
         end
-
-        # this check wasn't done previousy
-        # We need to do after rvm check, coz that might install rvm and that will affect whether these two will work
-        errors << 'bundle not installed' if @use_bundle && !valid_executable?("#{ruby_prefix} #{@bundle_executable}")
-        errors << 'rake not installed' unless valid_executable?("#{ruby_prefix} #{@rake_executable}")
   
         process_tasks_field
         process_gems_field
@@ -100,11 +95,15 @@ module MaestroDev
           Maestro.log.warn "Invalid Format For gems Field #{@gems} - ignoring [#{@gems.class.name}] #{@gems}"
           @gems = []
         end
+        @gems ||= []
 
-        # ensure the version of bundler is installed
-        if !@bundler_version.nil? and !@bundler_version.empty?
-          @gems ||= []
-          @gems << "bundler -v #{@bundler_version}"
+        # ensure bundler and rake are installed
+        if @use_bundle
+          bundler_gem = (@bundler_version and !@bundler_version.empty?) ? "bundler -v #{@bundler_version}" : "bundler"
+          @gems << bundler_gem unless @gems.include? bundler_gem
+        else
+          # when using bundler, rake should be installed from the Gemfile. Only install if not using bundler
+          @gems << "rake" unless @gems.include? "rake"
         end
       end
     
