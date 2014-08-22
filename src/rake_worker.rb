@@ -143,7 +143,7 @@ module MaestroDev
           Maestro.log.debug "Install Gems #{@gems.join(', ')}"
           gems_script = ''
           @gems.each do |gem_name|
-            gems_script += "gem install #{gem_name} --no-ri --no-rdoc"
+            gems_script += "(gem list #{gem_name} -i || gem install #{gem_name} --no-ri --no-rdoc)"
           end
         end
   
