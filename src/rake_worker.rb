@@ -40,9 +40,7 @@ module MaestroDev
   
       def validate_parameters
         errors = []
-        @ruby_version = ''
-        @rubygems_version = ''
-  
+
         @rake_executable = get_field('rake_executable', 'rake')
   
         @use_rvm = get_boolean_field('use_rvm')
@@ -53,11 +51,11 @@ module MaestroDev
         @rubygems_version = get_field('rubygems_version', '')
   
         @use_bundle = get_boolean_field('use_bundle')
-        @bundle_executable = get_field('bundle_executable', 'bundle')
-  
+        @bundler_version = get_field('bundler_version')
+        @bundle_executable = get_field('bundle_executable', (@bundler_version.nil? || @bundler_version.empty?) ? "bundle" : "bundle _#{@bundler_version}_")
+
         @environment = get_field('environment', '')
         @env = @environment.empty? ? "" : "#{Maestro::Util::Shell::ENV_EXPORT_COMMAND} #{@environment.gsub(/(&&|[;&])\s*$/, '')} && "
-  
         errors << 'rvm not installed' if @use_rvm && !valid_executable?(@rvm_executable)
   
         @tasks = get_field('tasks', '')

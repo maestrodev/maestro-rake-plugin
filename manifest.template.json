@@ -64,6 +64,12 @@
             "type": "Boolean",
             "value": false
           },
+          "bundler_version": {
+            "description": "use a specific version of bundler, default to latest installed",
+            "required": false,
+            "type": "String",
+            "value": null
+          },
           "environment": {
             "description": "environment variables to set for the execution",
             "required": false,

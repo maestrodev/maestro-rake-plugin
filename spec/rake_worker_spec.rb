@@ -127,6 +127,7 @@ describe MaestroDev::Plugin::RakeWorker do
         its(:output) { should match(/cd #{Regexp.quote(path)}.*rake/m) }
         its(:output) { should_not include("ERROR") }
         its(:error) { should be_nil }
+        it { expect(subject.get_field('command')).to match(/^ rvm use default &&    rake --trace --version$/) }
       end
     end
 
@@ -153,12 +154,25 @@ describe MaestroDev::Plugin::RakeWorker do
         'environment' => 'CC=/usr/bin/gcc-4.2'
       }) }
 
-      its(:output) { should_not be_nil }
       its(:output) { should include("rake, version", "cd #{path}", "rvm use #{ruby_version}") }
       its(:output) { should_not include("ERROR") }
       its(:error) { should be_nil }
+      it { expect(subject.get_field('command')).to match(/^ rvm use #{ruby_version} &&   export BUNDLE_GEMFILE=.*\/Gemfile && bundle config --delete without && export BUNDLE_WITHOUT='' && bundle install && bundle exec  rake --trace --version$/) }
     end
-    
+
+    context "when running rake with rvm and a specific version of bundler" do
+      let(:fields) { super().merge({
+        'tasks' => '--version',
+        'environment' => 'CC=/usr/bin/gcc-4.2',
+        'bundler_version' => '1.6.5'
+      }) }
+
+      its(:output) { should include("rake, version", "cd #{path}", "rvm use #{ruby_version}") }
+      its(:output) { should_not include("ERROR") }
+      its(:error) { should be_nil }
+      it { expect(subject.get_field('command')).to match(/^ rvm use #{ruby_version} &&   export BUNDLE_GEMFILE=.*\/Gemfile && bundle _1.6.5_ config --delete without && export BUNDLE_WITHOUT='' && bundle _1.6.5_ install && bundle _1.6.5_ exec  rake --trace --version$/) }
+    end
+
     context "when running rake using scm path w/o rvm & bundler" do
       let(:fields) { super().merge({
         'tasks' => '--version',
