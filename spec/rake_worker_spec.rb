@@ -75,7 +75,7 @@ describe MaestroDev::Plugin::RakeWorker do
     context "when using gems" do
       let(:fields) {{
         'rake_executable' => 'echo 1',
-        'gems' => [],
+        'gems' => ["rspec-core"],
         'path' => '/tmp'
       }}
 
